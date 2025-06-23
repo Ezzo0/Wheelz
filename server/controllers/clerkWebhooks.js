@@ -5,6 +5,7 @@ const clerkWebhooks = async (req, res) => {
   try {
     // create a Svix instance with clerk webhook secret
     const webhook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
+
     // getting headers
     const headers = {
       "svix-id": req.headers["svix-id"],
@@ -12,11 +13,16 @@ const clerkWebhooks = async (req, res) => {
       "svix-signature": req.headers["svix-signature"],
     };
 
-    // verify headers
-    await webhook.verify(JSON.stringify(req.body), headers);
+    // Convert raw body to string for verification
+    const body = req.body.toString();
 
-    // Getting Data from the request body
-    const { data, type } = req.body;
+    // verify headers and body
+    const evt = webhook.verify(body, headers);
+
+    // Getting Data from the verified event
+    const { data, type } = evt;
+
+    console.log("Webhook received:", type, "for user:", data.id);
 
     const userData = {
       _id: data.id,
@@ -28,30 +34,45 @@ const clerkWebhooks = async (req, res) => {
     // Switch cases for different events
     switch (type) {
       case "user.created": {
-        await User.create(userData);
+        console.log("Creating user:", userData);
+        const newUser = await User.create(userData);
+        console.log("User created successfully:", newUser._id);
         break;
       }
 
       case "user.updated": {
-        await User.findByIdAndUpdate(data.id, userData);
+        console.log("Updating user:", data.id);
+        const updatedUser = await User.findByIdAndUpdate(data.id, userData, {
+          new: true,
+        });
+        console.log(
+          "User updated successfully:",
+          updatedUser ? updatedUser._id : "User not found"
+        );
         break;
       }
 
       case "user.deleted": {
-        await User.findByIdAndDelete(data.id);
+        console.log("Deleting user:", data.id);
+        const deletedUser = await User.findByIdAndDelete(data.id);
+        console.log(
+          "User deleted successfully:",
+          deletedUser ? deletedUser._id : "User not found"
+        );
         break;
       }
 
       default: {
-        console.log("No event found");
+        console.log("Unhandled event type:", type);
         break;
       }
     }
 
-    res.json({ success: true, message: "Webhook Received" });
+    res.json({ success: true, message: "Webhook processed successfully" });
   } catch (error) {
-    console.log(error.message);
-    res.json({ success: false, message: error.message });
+    console.error("Webhook error:", error.message);
+    console.error("Full error:", error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
