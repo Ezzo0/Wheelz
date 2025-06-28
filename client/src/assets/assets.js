@@ -99,6 +99,7 @@ export const assets = {
   uploadArea,
   totalBookingIcon,
   totalRevenueIcon,
+  carImg2,
 };
 
 export const cities = ["Dubai", "Singapore", "New York", "London"];
