@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import Title from "../../components/Title";
 import { assets } from "../../assets/assets";
+import { useAppContext } from "../../context/AppContext";
+import toast from "react-hot-toast";
 
 const AddCar = () => {
+  const { axios, getToken } = useAppContext();
+
   const [images, setImages] = useState({
     1: null,
     2: null,
@@ -12,6 +16,7 @@ const AddCar = () => {
 
   const [inputs, setInputs] = useState({
     carType: "",
+    carModel: "",
     pricePerNight: 0,
     amenities: {
       "Air Conditioning": false,
@@ -24,9 +29,85 @@ const AddCar = () => {
       "Mobile Device Holders": false,
       "Emergency Spare Tire & Tools": false,
     },
+    carAddress: "",
   });
+
+  const [loading, setLoading] = useState(false);
+
+  const onSubmitHandler = async (event) => {
+    event.preventDefault();
+    // Check if all fields are filled
+    if (
+      !inputs.carType ||
+      !inputs.carModel ||
+      !inputs.pricePerNight ||
+      !inputs.carAddress ||
+      !inputs.amenities ||
+      !Object.values(images).some((image) => image)
+    ) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("carType", inputs.carType);
+      formData.append("carModel", inputs.carModel);
+      formData.append("pricePerNight", inputs.pricePerNight);
+      formData.append("carAddress", inputs.carAddress);
+      // Converting Amenities to Array & keeping only enabled Amenities
+      const amenities = Object.keys(inputs.amenities).filter(
+        (key) => inputs.amenities[key]
+      );
+      formData.append("amenities", JSON.stringify(amenities));
+      // Adding Images to FormData
+      Object.keys(images).forEach((key) => {
+        images[key] && formData.append("images", images[key]);
+      });
+
+      const { data } = await axios.post("/api/cars/", formData, {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+      });
+
+      if (data.success) {
+        toast.success(data.message);
+        setInputs({
+          carType: "",
+          carModel: "",
+          pricePerNight: 0,
+          amenities: {
+            "Air Conditioning": false,
+            "Ventilated Seats": false,
+            "Rearview Camera": false,
+            "Navigation System": false,
+            "Blind Spot Monitoring": false,
+            "Adaptive Cruise Control": false,
+            "USB Charging Ports": false,
+            "Mobile Device Holders": false,
+            "Emergency Spare Tire & Tools": false,
+          },
+          carAddress: "",
+        });
+        setImages({
+          1: null,
+          2: null,
+          3: null,
+          4: null,
+        });
+      } else {
+        console.log(data);
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
-    <form>
+    <form onSubmit={onSubmitHandler}>
       <Title
         align="left"
         font="outfit"
@@ -71,7 +152,9 @@ const AddCar = () => {
             <option value="">Select Car Type</option>
             <option value="Sedans">Sedans</option>
             <option value="SUVs">SUVs</option>
+            <option value="Sports Cars">Sports Cars</option>
             <option value="Hatchbacks">Hatchbacks</option>
+            <option value="Vans">Vans</option>
             <option value="Electric">Electric</option>
           </select>
         </div>
@@ -86,6 +169,28 @@ const AddCar = () => {
             value={inputs.pricePerNight}
             onChange={(e) =>
               setInputs({ ...inputs, pricePerNight: e.target.value })
+            }
+          />
+        </div>
+        <div className="flex-1 max-w-48">
+          <p className="text-gray-800 mt-4">Car Model</p>
+          <input
+            type="text"
+            placeholder="Model"
+            className="border border-gray-300 mt-1 rounded p-2 w-full"
+            value={inputs.carModel}
+            onChange={(e) => setInputs({ ...inputs, carModel: e.target.value })}
+          />
+        </div>
+        <div className="flex-1 max-w-48">
+          <p className="text-gray-800 mt-4">Car Address</p>
+          <input
+            type="text"
+            placeholder="Address"
+            className="border border-gray-300 mt-1 rounded p-2 w-full"
+            value={inputs.carAddress}
+            onChange={(e) =>
+              setInputs({ ...inputs, carAddress: e.target.value })
             }
           />
         </div>
@@ -112,11 +217,17 @@ const AddCar = () => {
           </div>
         ))}
       </div>
-      <button className="bg-primary text-white px-8 py-2 rounded mt-8 cursor-pointer">
-        Add Car
+      <button
+        className="bg-primary text-white px-8 py-2 rounded mt-8 cursor-pointer"
+        disabled={loading}
+      >
+        {loading ? "Adding Car..." : "Add Car"}
       </button>
     </form>
   );
 };
 
 export default AddCar;
+
+// user_2yxCDyVQBbt5My4euZAc3gbNlGo
+// user_2yxCDyVQBbt5My4euZAc3gbNlGo

@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "carOwner"],
+      enum: ["user", "carCompanyOwner"],
       default: "user",
     },
     recentSearchCities: [{ type: String, required: true }],

@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { assets, carsDummyData, facilityIcons } from "../assets/assets";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { assets, facilityIcons } from "../assets/assets";
+import { useSearchParams } from "react-router-dom";
 import StarRating from "../components/StarRating";
+import { useAppContext } from "../context/AppContext";
 
 const CheckBox = ({ label, selected = false, onChange = () => {} }) => {
   return (
@@ -31,8 +32,14 @@ const RadioButton = ({ label, selected = false, onChange = () => {} }) => {
 };
 
 const AllCars = () => {
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { cars, navigate, currency } = useAppContext();
   const [openFilters, setOpenFilters] = useState(false);
+  const [selectedFilters, setSelectedFilters] = useState({
+    carType: [],
+    priceRange: [],
+  });
+  const [selectedSort, setSelectedSort] = useState("");
 
   const carTypes = [
     "Sedans",
@@ -44,11 +51,11 @@ const AllCars = () => {
   ];
 
   const priceRanges = [
-    "Under  $100 /day",
-    "$100 - $200 /day",
-    "$200 - $300 /day",
-    "$300 - $400 /day",
-    "$400 - $500 /day",
+    "0 to 100",
+    "100 to 200",
+    "200 to 300",
+    "300 to 400",
+    "400 to 500",
   ];
 
   const sortOptions = [
@@ -56,6 +63,84 @@ const AllCars = () => {
     "Price: High to Low",
     "Newest First",
   ];
+
+  // Handle changes for filters and sorting
+  const handleFilterChange = (checked, value, type) => {
+    setSelectedFilters((prevFilters) => {
+      const updatedFilters = { ...prevFilters };
+      if (checked) {
+        updatedFilters[type].push(value);
+      } else {
+        updatedFilters[type] = updatedFilters[type].filter(
+          (item) => item !== value
+        );
+      }
+      return updatedFilters;
+    });
+  };
+
+  const handleSortChange = (sortOption) => {
+    setSelectedSort(sortOption);
+  };
+
+  // Function to check if a car matches the selected car types
+  const matchesCarType = (car) => {
+    return (
+      selectedFilters.carType.length === 0 ||
+      selectedFilters.carType.includes(car.carType)
+    );
+  };
+
+  // Function to check if a car matches the selected price range
+  const matchesPriceRange = (car) => {
+    return (
+      selectedFilters.priceRange.length === 0 ||
+      selectedFilters.priceRange.some((range) => {
+        const [min, max] = range.split(" to ").map(Number);
+        return car.pricePerNight >= min && car.pricePerNight <= max;
+      })
+    );
+  };
+
+  // Function to sort cars based on the selected sort option
+  const sortCars = (a, b) => {
+    if (selectedSort === "Price: Low to High") {
+      return a.pricePerNight - b.pricePerNight;
+    } else if (selectedSort === "Price: High to Low") {
+      return b.pricePerNight - a.pricePerNight;
+    }
+    if (selectedSort === "Newest First") {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    }
+    return 0;
+  };
+
+  // Filter City
+  const filterCity = (car) => {
+    const city = searchParams.get("city");
+    if (!city) return true;
+    return car.carAddress.toLowerCase().includes(city.toLowerCase());
+  };
+
+  // Filter and sort rooms based on the selected filters and sort options
+  const filteredCars = useMemo(() => {
+    return cars
+      .filter(
+        (car) =>
+          matchesCarType(car) && matchesPriceRange(car) && filterCity(car)
+      )
+      .sort(sortCars);
+  }, [cars, selectedFilters, selectedSort, searchParams]);
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSelectedFilters({
+      carType: [],
+      priceRange: [],
+    });
+    setSelectedSort("");
+    setSearchParams({});
+  };
 
   return (
     <div className="flex flex-col-reverse lg:flex-row items-start justify-between pt-28 md:pt-35 px-4 md:px-16 lg:px-24">
@@ -68,7 +153,7 @@ const AllCars = () => {
           </p>
         </div>
 
-        {carsDummyData.map((car) => (
+        {filteredCars.map((car) => (
           <div
             key={car._id}
             className="flex flex-col md:flex-row items-start py-10 gap-6 border-b border-gray-300 last:pb-30 last:border-0"
@@ -96,15 +181,15 @@ const AllCars = () => {
                 }}
                 className="text-gray-800 text-3xl font-playfair cursor-pointer"
               >
-                {car.name}
+                {car.carModel}
               </p>
               <div className="flex items-center">
-                <StarRating rating={car.rating} />
+                <StarRating />
                 <p className="ml-2">200+ reviews</p>
               </div>
               <div className="flex items-center gap-1 text-gray-500 mt-2 text-sm">
                 <img src={assets.locationIcon} alt="location-icon" />
-                <span>{car.address}</span>
+                <span>{car.carAddress}</span>
               </div>
               {/* car Amenities */}
               <div className="flex flex-wrap items-center mt-3 mb-6 gap-4">
@@ -146,7 +231,12 @@ const AllCars = () => {
             >
               {openFilters ? "HIDE" : "SHOW"}
             </span>
-            <span className="hidden lg:block">CLEAR</span>
+            <button
+              onClick={clearAllFilters}
+              className="hidden lg:block text-xs cursor-pointer hover:text-gray-800"
+            >
+              CLEAR
+            </button>
           </div>
         </div>
 
@@ -158,19 +248,38 @@ const AllCars = () => {
           <div className="px-5 pt-5">
             <p className="font-medium text-gray-800 pb-2">Popular filters</p>
             {carTypes.map((car, index) => (
-              <CheckBox key={index} label={car} />
+              <CheckBox
+                key={index}
+                label={car}
+                selected={selectedFilters.carType.includes(car)}
+                onChange={(checked) =>
+                  handleFilterChange(checked, car, "carType")
+                }
+              />
             ))}
           </div>
           <div className="px-5 pt-5">
             <p className="font-medium text-gray-800 pb-2">Price Range</p>
             {priceRanges.map((range, index) => (
-              <CheckBox key={index} label={`${range}`} />
+              <CheckBox
+                key={index}
+                label={`${currency} ${range}`}
+                selected={selectedFilters.priceRange.includes(range)}
+                onChange={(checked) =>
+                  handleFilterChange(checked, range, "priceRange")
+                }
+              />
             ))}
           </div>
           <div className="px-5 pt-5 pb-7">
             <p className="font-medium text-gray-800 pb-2">Sort By</p>
             {sortOptions.map((option, index) => (
-              <RadioButton key={index} label={option} />
+              <RadioButton
+                key={index}
+                label={option}
+                selected={selectedSort === option}
+                onChange={() => handleSortChange(option)}
+              />
             ))}
           </div>
         </div>

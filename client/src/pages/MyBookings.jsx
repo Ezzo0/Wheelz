@@ -1,9 +1,37 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Title from "../components/Title";
-import { assets, userBookingsDummyData } from "../assets/assets";
+import { assets } from "../assets/assets";
+import { useAppContext } from "../context/AppContext";
+import toast from "react-hot-toast";
 
 const MyBookings = () => {
-  const [bookings, setBookings] = useState(userBookingsDummyData);
+  const { userBookings, getToken, axios, user } = useAppContext();
+  const [bookings, setBookings] = useState([]);
+
+  const fetchUserBookings = async () => {
+    try {
+      const { data } = await axios.get("/api/bookings/user", {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+      });
+
+      if (data.success) {
+        setBookings(data.bookings);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchUserBookings();
+    }
+  }, [userBookings]);
+
   return (
     <div className="py-28 md:pb-35 md:pt-32 px-4 md:px-16 lg:px-24 xl:px-32">
       <Title
@@ -33,19 +61,19 @@ const MyBookings = () => {
               />
               <div className="flex flex-col gap-1.5 max-md:mt-3 min-md:ml-4">
                 <p className="font-playfair text-2xl">
-                  {booking.car.name}
+                  {booking.car.carModel}
                   <span className="font-inter text-sm">
                     ({booking.car.carType})
                   </span>
                 </p>
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   <img src={assets.locationIcon} alt="location-icon" />
-                  <span>{booking.car.address}</span>
+                  <span>{booking.car.carAddress}</span>
                 </div>
-                <div className="flex items-center gap-1 text-sm text-gray-500">
+                {/* <div className="flex items-center gap-1 text-sm text-gray-500">
                   <img src={assets.guestsIcon} alt="guests-icon" />
-                  <span>Owner: {booking.car.host.username} guests</span>
-                </div>
+                  <span>Owner: {booking.car.carCompany.name}</span>
+                </div> */}
                 <p className="text-base">Total: ${booking.totalPrice}</p>
               </div>
             </div>

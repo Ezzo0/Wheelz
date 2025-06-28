@@ -4,8 +4,14 @@ import cors from "cors";
 import connectDB from "./configs/db.js";
 import { clerkMiddleware } from "@clerk/express";
 import clerkWebhooks from "./controllers/clerkWebhooks.js";
+import userRouter from "./routes/userRoutes.js";
+import carCompanyRouter from "./routes/carCompanyRoutes.js";
+import connectCloudinary from "./configs/cloudinary.js";
+import carRouter from "./routes/carRoutes.js";
+import bookingRouter from "./routes/bookingsRoutes.js";
 
 connectDB();
+connectCloudinary();
 
 const app = express();
 
@@ -21,6 +27,10 @@ app.use("/api/clerk", clerkWebhooks);
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
+app.use("/api/user", userRouter);
+app.use("/api/car-companies", carCompanyRouter);
+app.use("/api/cars", carRouter);
+app.use("/api/bookings", bookingRouter);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

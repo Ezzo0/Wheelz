@@ -1,9 +1,60 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Title from "../../components/Title";
-import { carsDummyData } from "../../assets/assets";
+import { useAppContext } from "../../context/AppContext";
+import { toast } from "react-hot-toast";
 
 const ListCar = () => {
-  const [cars, setCars] = useState(carsDummyData);
+  const [cars, setCars] = useState([]);
+  const { axios, getToken, user, currency } = useAppContext();
+
+  // Fetch car for the car company owner
+  const fetchCars = async () => {
+    try {
+      const { data } = await axios.get("api/cars/owner", {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+      });
+      console.log(data);
+      if (data.success) {
+        setCars(data.cars);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response.data.message);
+    }
+  };
+
+  // Toggle Availability of the Car
+  const toggleAvailability = async (carId) => {
+    try {
+      const { data } = await axios.post(
+        "/api/cars/toggle-availability",
+        { carId },
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
+        }
+      );
+      if (data.success) {
+        toast.success(data.message);
+        fetchCars();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchCars();
+    }
+  }, [user]);
+
   return (
     <div>
       <Title
@@ -18,7 +69,7 @@ const ListCar = () => {
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="py-3 px-4 text-gray-800 font-medium">Name</th>
+              <th className="py-3 px-4 text-gray-800 font-medium">Model</th>
               <th className="py-3 px-4 text-gray-800 font-medium max-sm:hidden">
                 Facility
               </th>
@@ -37,21 +88,22 @@ const ListCar = () => {
             {cars.map((item, index) => (
               <tr key={index}>
                 <td className="py-3 px-4 text-gray-700 border-t border-gray-300">
-                  {item.carType}
+                  {item.carModel}
                 </td>
                 <td className="py-3 px-4 text-gray-700 border-t border-gray-300 max-sm:hidden">
                   {item.amenities.join(", ")}
                 </td>
                 <td className="py-3 px-4 text-gray-700 border-t border-gray-300">
-                  {item.address}
+                  {item.carAddress}
                 </td>
                 <td className="py-3 px-4 text-gray-700 border-t border-gray-300">
-                  {item.pricePerNight}
+                  {currency} {item.pricePerNight}
                 </td>
                 <td className="py-3 px-4 border-t border-gray-300 text-sm text-red-500 text-center">
                   <label className="relative inline-flex items-center cursor-pointer text-gray-900 gap-3">
                     <input
                       type="checkbox"
+                      onChange={() => toggleAvailability(item._id)}
                       className="sr-only peer"
                       checked={item.isAvailable}
                     />

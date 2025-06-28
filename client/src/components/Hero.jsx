@@ -1,7 +1,32 @@
-import React from "react";
+import React, { useState } from "react";
 import { assets, cities } from "../assets/assets";
-
+import { useAppContext } from "../context/AppContext";
 const Hero = () => {
+  const [city, setCity] = useState("");
+  const { navigate, getToken, axios, setSearchCities } = useAppContext();
+
+  const onSearch = async (e) => {
+    e.preventDefault();
+    navigate(`/cars?city=${city}`);
+    // Call api to save recent search city
+    await axios.post(
+      "/api/user/store-recent-search",
+      { recentSearchCity: city },
+      {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+      }
+    );
+    // Add city to search cities max 3 recent searched cities
+    setSearchCities((prevSearchCities) => {
+      const updatedSearchCities = [...prevSearchCities, city];
+      if (updatedSearchCities.length > 3) {
+        updatedSearchCities.shift();
+      }
+      return updatedSearchCities;
+    });
+  };
   return (
     <div
       className='flex flex-col items-start justify-center px-6 md:px-16 lg:px-24 xl:px-32 
@@ -17,13 +42,18 @@ const Hero = () => {
         Rent from our wide range of cars at unbeatable prices. Easy booking, no
         hidden fees, total peace of mind.
       </p>
-      <form className="bg-white text-gray-500 rounded-lg px-6 py-4 mt-8 flex flex-col md:flex-row max-md:items-start gap-4 max-md:mx-auto">
+      <form
+        onSubmit={onSearch}
+        className="bg-white text-gray-500 rounded-lg px-6 py-4 mt-8 flex flex-col md:flex-row max-md:items-start gap-4 max-md:mx-auto"
+      >
         <div>
           <div className="flex items-center gap-2">
             <img src={assets.locationIcon} alt="" className="h-4" />
             <label htmlFor="cityInput">City</label>
           </div>
           <input
+            onChange={(e) => setCity(e.target.value)}
+            value={city}
             list="cities"
             id="cityInput"
             type="text"

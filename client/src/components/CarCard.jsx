@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { assets } from "../assets/assets";
 import React from "react";
+import { useAppContext } from "../context/AppContext";
 
 const CarCard = ({ car, index }) => {
+  const { currency } = useAppContext();
   return (
     <Link
       to={`/cars/${car._id}`}
@@ -19,7 +21,7 @@ const CarCard = ({ car, index }) => {
       <div className="p-4 pt-5">
         <div className="flex items-center justify-between">
           <p className="font-playfair text-xl font-medium text-gray-800">
-            {car.name}
+            {car.carModel}
           </p>
           <div className="flex items-center gap-1">
             <img src={assets.starIconFilled} alt="star-icon" /> 4.5
@@ -28,12 +30,14 @@ const CarCard = ({ car, index }) => {
 
         <div className="flex items-center gap-1 text-sm">
           <img src={assets.locationIcon} alt="location-icon" />
-          <span>{car.address}</span>
+          <span>{car.carAddress}</span>
         </div>
 
         <div className="flex items-center justify-between mt-4">
           <p>
-            <span className="text-xl text-gray-800">${car.pricePerNight}</span>
+            <span className="text-xl text-gray-800">
+              {currency} {car.pricePerNight}
+            </span>
             /day
           </p>
           <button className="px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition-all cursor-pointer">

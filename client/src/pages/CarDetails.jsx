@@ -1,19 +1,91 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { carsDummyData, facilityIcons, carCommonData } from "../assets/assets";
+import { facilityIcons, carCommonData } from "../assets/assets";
 import StarRating from "../components/StarRating";
 import { assets } from "../assets/assets";
-
+import { useAppContext } from "../context/AppContext";
+import toast from "react-hot-toast";
 const CarDetails = () => {
   const { id } = useParams();
+  const { cars, getToken, axios, navigate } = useAppContext();
   const [car, setCar] = useState(null);
   const [mainImg, setMainImg] = useState(null);
+  const [checkInDate, setCheckInDate] = useState(null);
+  const [checkOutDate, setCheckOutDate] = useState(null);
+
+  const [isAvailable, setIsAvailable] = useState(false);
+
+  // Check if car is available
+  const checkAvailability = async () => {
+    try {
+      // Check if check-In Date is greater than check-Out Date
+      if (checkInDate >= checkOutDate) {
+        toast.error("Check-In Date must be before Check-Out Date");
+        return;
+      }
+
+      const { data } = await axios.post("/api/bookings/check-availability", {
+        car: id,
+        checkInDate,
+        checkOutDate,
+      });
+
+      if (data.success) {
+        if (data.isAvailable) {
+          setIsAvailable(true);
+          toast.success("Car is available");
+        } else {
+          setIsAvailable(false);
+          toast.error("Car is not available");
+        }
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  // onSubmitHandler function to check availability & book the car
+  const onSubmitHandler = async (e) => {
+    try {
+      e.preventDefault();
+      if (!isAvailable) {
+        return checkAvailability();
+      } else {
+        const { data } = await axios.post(
+          "/api/bookings/book",
+          {
+            car: id,
+            checkInDate,
+            checkOutDate,
+            paymentMethod: "stripe",
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${await getToken()}`,
+            },
+          }
+        );
+
+        if (data.success) {
+          toast.success(data.message);
+          navigate("/my-bookings");
+          scrollTo(0, 0);
+        } else {
+          toast.error(data.message);
+        }
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   useEffect(() => {
-    const car = carsDummyData.find((car) => car._id === id);
+    const car = cars.find((car) => car._id === id);
     car && setCar(car);
     car && setMainImg(car.images[0]);
-  }, []);
+  }, [cars]);
 
   return (
     car && (
@@ -21,7 +93,7 @@ const CarDetails = () => {
         {/* Car Details */}
         <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
           <h1 className="text-3xl md:text-4xl font-playfair">
-            {car.name}
+            {car.carModel}
             <span className="font-inter text-sm"> ({car.carType})</span>
           </h1>
           <p className="text-xs font-inter py-1.5 px-3 text-white bg-orange-500 rounded-full">
@@ -37,7 +109,7 @@ const CarDetails = () => {
         {/* Car Address */}
         <div className="flex items-center gap-1 text-gray-500 mt-2">
           <img src={assets.locationIcon} alt="location-icon" />
-          <span>{car.address}</span>
+          <span>{car.carAddress}</span>
         </div>
 
         {/* Car Images */}
@@ -93,7 +165,10 @@ const CarDetails = () => {
         </div>
 
         {/* Booking Form */}
-        <form className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white border border-gray-200 shadow-lg p-6 rounded-xl mx-auto mt-16 max-w-6xl">
+        <form
+          onSubmit={onSubmitHandler}
+          className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white border border-gray-200 shadow-lg p-6 rounded-xl mx-auto mt-16 max-w-6xl"
+        >
           <div className="flex flex-col flex-wrap md:flex-row items-start md:items-center gap-4 md:gap-10 text-gray-500">
             <div className="flex flex-col">
               <label htmlFor="checkInDate" className="font-medium">
@@ -101,6 +176,8 @@ const CarDetails = () => {
               </label>
               <input
                 type="date"
+                onChange={(e) => setCheckInDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
                 id="checkInDate"
                 placeholder="Check-In"
                 className="w-full rounded border border-gray-300 px-20 py-2 mt-1.5 outline-none"
@@ -113,6 +190,9 @@ const CarDetails = () => {
                 Check-Out
               </label>
               <input
+                onChange={(e) => setCheckOutDate(e.target.value)}
+                min={checkInDate}
+                disabled={!checkInDate}
                 type="date"
                 id="checkOutDate"
                 placeholder="Check-Out"
@@ -125,7 +205,7 @@ const CarDetails = () => {
             type="submit"
             className="bg-primary hover:bg-primary-dull active:scale-95 transition-all text-white rounded-md max-md:w-full max-md:mt-6 md:px-25 py-3 md:py-4 text-base cursor-pointer md:mt-6"
           >
-            Check Availability
+            {isAvailable ? "Book Now" : "Check Availability"}
           </button>
         </form>
 
@@ -163,13 +243,13 @@ const CarDetails = () => {
         <div className="flex flex-col items-start gap-4">
           <div className="flex gap-4">
             <img
-              src={car.host.image}
+              src={car.carCompany.image}
               alt="Host"
               className="h-14 w-14 md:h-18 md:w-18 rounded-full"
             />
             <div>
               <p className="text-lg md:text-xl">
-                Hosted By {car.host.username}
+                Hosted By {car.carCompany.name}
               </p>
               <div className="flex items-center mt-1">
                 <StarRating />

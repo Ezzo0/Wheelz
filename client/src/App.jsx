@@ -11,14 +11,18 @@ import Layout from "./pages/CarOwner/Layout";
 import Dashboard from "./pages/CarOwner/Dashboard";
 import AddCar from "./pages/CarOwner/AddCar";
 import ListCar from "./pages/CarOwner/ListCar";
+import { Toaster } from "react-hot-toast";
+import { useAppContext } from "./context/AppContext";
 
 const App = () => {
   const isOwnerPath = useLocation().pathname.includes("owner");
+  const { showCarCompanyReg } = useAppContext();
 
   return (
     <div>
+      <Toaster />
       {!isOwnerPath && <Navbar />}
-      {false && <CarReg />}
+      {showCarCompanyReg && <CarReg />}
       <div className="min-h-[70vh]">
         <Routes>
           <Route path="/" element={<Home />} />
