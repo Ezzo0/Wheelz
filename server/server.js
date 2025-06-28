@@ -9,6 +9,7 @@ import carCompanyRouter from "./routes/carCompanyRoutes.js";
 import connectCloudinary from "./configs/cloudinary.js";
 import carRouter from "./routes/carRoutes.js";
 import bookingRouter from "./routes/bookingsRoutes.js";
+import { stripeWebhook } from "./controllers/stripeWebhooks.js";
 
 connectDB();
 connectCloudinary();
@@ -16,6 +17,13 @@ connectCloudinary();
 const app = express();
 
 app.use(cors()); // Enable cross-origin resource sharing
+
+// API to listen to Stripe Webhooks
+app.post(
+  "/api/stripe",
+  express.raw({ type: "application/json" }),
+  stripeWebhook
+);
 
 // Middleware
 app.use(express.json());
