@@ -100,6 +100,11 @@ const CarDetails = () => {
             20% OFF
           </p>
         </div>
+        {/* Car Licence Number */}
+        <div className="flex items-center gap-2 mt-1 text-gray-600 text-sm">
+          <span className="font-medium">Licence Number:</span>
+          <span>{car.licenceNumber}</span>
+        </div>
         {/* Car Rating */}
         <div className="flex items-center gap-1 mt-2">
           <StarRating />
@@ -229,7 +234,7 @@ const CarDetails = () => {
         <div className="max-w-3xl border-y border-gray-300 my-15 py-10 text-gray-500">
           <p>
             Drivers will be assigned vehicles based on availability at the time
-            of pickup. You’ll enjoy a well-maintained, comfortable car ideal for
+            of pickup. You'll enjoy a well-maintained, comfortable car ideal for
             city driving. The price listed covers two drivers — during the
             booking process, please indicate the total number of drivers or
             passengers to get the most accurate pricing for your group. Vehicle

@@ -30,6 +30,7 @@ const AddCar = () => {
       "Emergency Spare Tire & Tools": false,
     },
     carAddress: "",
+    licenceNumber: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -42,6 +43,7 @@ const AddCar = () => {
       !inputs.carModel ||
       !inputs.pricePerNight ||
       !inputs.carAddress ||
+      !inputs.licenceNumber ||
       !inputs.amenities ||
       !Object.values(images).some((image) => image)
     ) {
@@ -55,6 +57,7 @@ const AddCar = () => {
       formData.append("carModel", inputs.carModel);
       formData.append("pricePerNight", inputs.pricePerNight);
       formData.append("carAddress", inputs.carAddress);
+      formData.append("licenceNumber", inputs.licenceNumber);
       // Converting Amenities to Array & keeping only enabled Amenities
       const amenities = Object.keys(inputs.amenities).filter(
         (key) => inputs.amenities[key]
@@ -89,6 +92,7 @@ const AddCar = () => {
             "Emergency Spare Tire & Tools": false,
           },
           carAddress: "",
+          licenceNumber: "",
         });
         setImages({
           1: null,
@@ -183,6 +187,18 @@ const AddCar = () => {
           />
         </div>
         <div className="flex-1 max-w-48">
+          <p className="text-gray-800 mt-4">Licence Number</p>
+          <input
+            type="text"
+            placeholder="Licence Number"
+            className="border border-gray-300 mt-1 rounded p-2 w-full"
+            value={inputs.licenceNumber}
+            onChange={(e) =>
+              setInputs({ ...inputs, licenceNumber: e.target.value })
+            }
+          />
+        </div>
+        <div className="flex-1 max-w-48">
           <p className="text-gray-800 mt-4">Car Address</p>
           <input
             type="text"
@@ -228,6 +244,3 @@ const AddCar = () => {
 };
 
 export default AddCar;
-
-// user_2yxCDyVQBbt5My4euZAc3gbNlGo
-// user_2yxCDyVQBbt5My4euZAc3gbNlGo

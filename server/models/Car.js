@@ -5,6 +5,7 @@ const carSchema = new mongoose.Schema(
     carCompany: { type: String, ref: "CarCompany", required: true },
     carType: { type: String, required: true },
     carModel: { type: String, required: true },
+    licenceNumber: { type: String, required: true },
     pricePerNight: { type: Number, required: true },
     amenities: { type: Array, required: true },
     images: [{ type: String }],

@@ -91,10 +91,10 @@ const MyBookings = () => {
                   <img src={assets.locationIcon} alt="location-icon" />
                   <span>{booking.car.carAddress}</span>
                 </div>
-                {/* <div className="flex items-center gap-1 text-sm text-gray-500">
-                  <img src={assets.guestsIcon} alt="guests-icon" />
-                  <span>Owner: {booking.car.carCompany.name}</span>
-                </div> */}
+                <div className="flex items-center gap-1 text-sm text-gray-500">
+                  <img src={assets.carIcon} alt="car-icon" className="h-4" />
+                  <span>Owner: {booking.car.licenceNumber}</span>
+                </div>
                 <p className="text-base">Total: ${booking.totalPrice}</p>
               </div>
             </div>
